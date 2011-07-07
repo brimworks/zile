@@ -33,7 +33,7 @@ local function no_upper (s, regex)
   return true
 end
 
-local re_flags = rex_gnu.flags ()
+local re_flags = rex_pcre.flags ()
 local re_find_err
 
 local function find_substr (as, s, from, to, forward, notbol, noteol, regex, icase)
@@ -44,20 +44,21 @@ local function find_substr (as, s, from, to, forward, notbol, noteol, regex, ica
     s = string.gsub (s, "([$^.*[%]\\+?])", "\\%1")
   end
   if icase then
-    cf = bit.bor (cf, re_flags.ICASE)
+    cf = bit.bor (cf, re_flags.CASELESS)
   end
 
-  local ok, r = pcall (rex_gnu.new, s, cf)
+  if not forward then
+    s = ".*" .. s
+  end
+
+  local ok, r = pcall (rex_pcre.new, s, cf)
   if ok then
     local ef = 0
     if notbol then
-      ef = bit.bor (ef, re_flags.not_bol)
+      ef = bit.bor (ef, re_flags.NOTBOL)
     end
     if noteol then
-      ef = bit.bor (ef, re_flags.not_eol)
-    end
-    if not forward then
-      ef = bit.bor (ef, re_flags.backward)
+      ef = bit.bor (ef, re_flags.NOTEOL)
     end
     local match_from, match_to = r:find (string.sub (as, from + 1, to), nil, ef)
     if match_from then
